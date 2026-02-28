@@ -5,7 +5,7 @@ from transformers import WhisperProcessor, WhisperForConditionalGeneration
 from config import WHISPER_MODEL, SAMPLE_RATE, DEVICE
 
 # Realistic speech threshold based on your logs (noise ~0.01)
-SPEECH_RMS_THRESHOLD = 0.004
+SPEECH_RMS_THRESHOLD = 0.002
 
 class WhisperASR:
     """

@@ -37,7 +37,7 @@ class RealtimeEngine:
             audio_chunk = self.audio_buf.get_chunk()
             rms = float(np.sqrt(np.mean(audio_chunk**2)))
 
-            if rms > 0.004:
+            if rms > 0.002:
                 text = self.asr.transcribe(audio_chunk)
             else:
                 text = ""

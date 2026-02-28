@@ -60,9 +60,13 @@ async def predict_audio(file: UploadFile = File(...)):
         rms = float(np.sqrt(np.mean(audio**2)))
         print(f"[Audio] RMS={rms:.4f} samples={len(audio)}")
         text = ""
-        if rms > 0.004 and len(audio) >= 4000:
+        if rms > 0.02 and len(audio) >= 4000:
             text = asr.transcribe(audio)
             print(f"[Transcription] {repr(text)}")
+            if text == getattr(asr, "_last_text", ""):
+                text = ""
+            else:
+                asr._last_text = text
         return JSONResponse({
             "transcription": text,
             "rms": rms,
@@ -97,6 +101,7 @@ async def ws_realtime(websocket: WebSocket):
     await websocket.accept()
     print('[WS] Client connected')
     tbuf = ''
+    last_sent_text = ''
     try:
         while True:
             data = await websocket.receive_text()
@@ -131,7 +136,7 @@ async def ws_realtime(websocket: WebSocket):
                         tmp_path = tmp.name
                     wav_path = tmp_path + ".wav"
                     import subprocess, time
-                    r = subprocess.run([ffmpeg_exe, "-y", "-i", tmp_path, "-ar", "16000", "-ac", "1", wav_path], capture_output=True, timeout=30)
+                    r = subprocess.run([ffmpeg_exe, "-y", "-i", tmp_path, "-ar", "16000", "-ac", "1", wav_path], capture_output=True, timeout=10)
                     time.sleep(0.2)
                     import soundfile as sf
                     if r.returncode != 0 or not os.path.exists(wav_path) or os.path.getsize(wav_path) < 100:
@@ -145,11 +150,12 @@ async def ws_realtime(websocket: WebSocket):
                     rms = float(np.sqrt(np.mean(audio**2)))
                     result['rms'] = rms
                     print(f'[Audio] RMS={rms:.4f} samples={len(audio)}')
-                    if rms > 0.004 and len(audio) >= 4000:
+                    if rms > 0.02 and len(audio) >= 4000:
                         text = asr.transcribe(audio)
                         print(f'[Transcription] {repr(text)}')
-                        if text.strip():
+                        if text.strip() and text.strip() != last_sent_text:
                             tbuf = text
+                            last_sent_text = text.strip()
                             result['text'] = text
                 except Exception as ae:
                     print('[AudioErr]', type(ae).__name__, str(ae))
