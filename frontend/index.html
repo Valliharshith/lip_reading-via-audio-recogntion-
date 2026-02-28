@@ -1,0 +1,444 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>LipRead AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#030912;color:#e8f4fd;font-family:'JetBrains Mono',monospace;min-height:100vh;padding:20px}
+.wrap{max-width:1200px;margin:0 auto}
+header{padding:16px 0;border-bottom:1px solid #1a3a6b;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#00d4ff}
+.sb{display:flex;align-items:center;gap:8px;background:#0a1628;border:1px solid #1a3a6b;border-radius:100px;padding:7px 14px;font-size:11px;color:#5a7a9a}
+.dot{width:8px;height:8px;border-radius:50%;background:#5a7a9a}
+.dot.on{background:#00ff88;box-shadow:0 0 8px #00ff88}
+.dot.er{background:#ff6b35}
+.grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.panel{background:#0a1628;border:1px solid #1a3a6b;border-radius:14px;overflow:hidden;margin-bottom:14px}
+.ph{padding:12px 16px;border-bottom:1px solid #1a3a6b;display:flex;align-items:center;justify-content:space-between}
+.pt{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#00d4ff}
+.badge{font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:1px;text-transform:uppercase}
+.bl{background:rgba(0,255,136,.15);color:#00ff88;border:1px solid rgba(0,255,136,.3)}
+.br{background:rgba(0,212,255,.1);color:#00d4ff;border:1px solid rgba(0,212,255,.2)}
+.bw{background:rgba(255,107,53,.15);color:#ff6b35;border:1px solid rgba(255,107,53,.3)}
+.camwrap{position:relative;background:#050e1a;width:100%;aspect-ratio:16/9;overflow:hidden}
+.camwrap video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#5a7a9a;background:#050e1a;z-index:2}
+.overlay.hide{display:none}
+.scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00d4ff,transparent);opacity:0;top:0;z-index:1;pointer-events:none}
+.scanline.go{opacity:1;animation:scan 2s linear infinite}
+@keyframes scan{from{top:0}to{top:100%}}
+.lipbox{position:absolute;border:2px solid #00d4ff;border-radius:3px;box-shadow:0 0 12px rgba(0,212,255,.5);display:none;pointer-events:none;z-index:3}
+.lipbox.show{display:block}
+.ctrl{padding:12px 16px;display:flex;gap:8px;align-items:center;border-top:1px solid #1a3a6b;flex-wrap:wrap}
+.btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:8px 16px;border-radius:7px;border:1px solid #1a3a6b;cursor:pointer;letter-spacing:1px;text-transform:uppercase}
+.bp{background:#00d4ff;color:#030912;font-weight:700;border-color:#00d4ff}
+.bs{background:transparent;color:#e8f4fd}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.mbar{display:flex;border-top:1px solid #1a3a6b}
+.mi{flex:1;padding:10px 12px;border-right:1px solid #1a3a6b}
+.mi:last-child{border-right:none}
+.ml{font-size:8px;color:#5a7a9a;letter-spacing:2px;text-transform:uppercase}
+.mv{font-size:16px;font-weight:700;color:#00d4ff;font-family:'Syne',sans-serif;margin-top:2px}
+.mb{height:3px;background:#1a3a6b;border-radius:2px;margin-top:4px;overflow:hidden}
+.mf{height:100%;border-radius:2px;background:#00d4ff;width:0%;transition:width .3s}
+.tbox{padding:16px;min-height:120px}
+.ttxt{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;line-height:1.4;word-break:break-word;min-height:60px;color:#00ff88}
+.ttxt.empty{font-size:13px;color:#5a7a9a;font-family:'JetBrains Mono',monospace;font-weight:400}
+.cur{display:inline-block;width:3px;height:1em;background:#00d4ff;border-radius:2px;animation:cur 1s infinite;vertical-align:text-bottom;margin-left:2px}
+@keyframes cur{0%,100%{opacity:1}50%{opacity:0}}
+.mrow{display:flex;gap:5px;padding:10px 14px;border-top:1px solid #1a3a6b}
+.mchip{flex:1;padding:7px 4px;border-radius:7px;border:1px solid #1a3a6b;background:transparent;color:#5a7a9a;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-align:center}
+.mchip.active{background:#0f1f38;color:#00d4ff;border-color:#00d4ff}
+.hlog{padding:12px 16px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.hentry{font-size:11px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);color:#e8f4fd}
+.htime{font-size:9px;color:#5a7a9a;margin-right:8px}
+.urlbar{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid #1a3a6b}
+.urlinput{flex:1;background:#0f1f38;border:1px solid #1a3a6b;border-radius:7px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#e8f4fd;outline:none}
+.lcard{padding:16px;display:flex;flex-direction:column;gap:10px}
+.ldisp{display:flex;align-items:center;gap:12px}
+.licon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#0f1f38;border:1px solid #1a3a6b;flex-shrink:0}
+.lname{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase}
+.lsub{font-size:10px;color:#5a7a9a;margin-top:2px}
+.mmtrk{height:4px;background:#0f1f38;border-radius:3px;overflow:hidden;border:1px solid #1a3a6b;margin-top:4px}
+.mmfil{height:100%;border-radius:3px;background:linear-gradient(90deg,#00d4ff,#00ff88);width:0%;transition:width .2s}
+.toasts{position:fixed;bottom:20px;right:20px;z-index:100;display:flex;flex-direction:column;gap:6px}
+.toast{background:#0f1f38;border:1px solid #1a3a6b;border-radius:8px;padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px}
+.toast.ok{border-color:rgba(0,255,136,.4)}.toast.er{border-color:rgba(255,107,53,.4)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">LipRead AI</div>
+  <div style="display:flex;gap:10px">
+    <div class="sb"><div class="dot" id="sdot"></div><span id="stxt">Checking...</span></div>
+    <div class="sb" id="wsbar" style="display:none"><div class="dot" id="wdot"></div><span id="wtxt">WS</span></div>
+  </div>
+</header>
+<div class="panel">
+  <div class="urlbar">
+    <span style="font-size:9px;color:#5a7a9a;text-transform:uppercase;letter-spacing:1px">Backend URL</span>
+    <input class="urlinput" id="apiUrl" value="http://127.0.0.1:8000">
+    <button class="btn bs" onclick="ping()" style="padding:6px 12px">Ping</button>
+  </div>
+</div>
+<div class="grid">
+  <div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Camera Feed</span><span class="badge br" id="cbadge">Ready</span></div>
+      <div class="camwrap" id="camwrap">
+        <video id="vid" autoplay muted playsinline></video>
+        <div class="scanline" id="scanline"></div>
+        <div class="lipbox" id="lipbox"></div>
+        <div class="overlay" id="overlay">
+          <div style="font-size:44px;opacity:.35">&#128247;</div>
+          <p style="font-size:13px;text-align:center"><strong style="color:#00d4ff;display:block;margin-bottom:4px">Click Start Camera</strong>Allow camera and microphone</p>
+        </div>
+      </div>
+      <div class="ctrl">
+        <button class="btn bp" id="startBtn" onclick="startCam()">&#9654; Start Camera</button>
+        <button class="btn bs" id="stopBtn" onclick="stopCam()" disabled>&#9209; Stop</button>
+        <span id="fpsD" style="margin-left:auto;font-size:10px;color:#5a7a9a">-- FPS</span>
+      </div>
+      <div class="mbar">
+        <div class="mi"><div class="ml">FPS</div><div class="mv" id="mFps">--</div><div class="mb"><div class="mf" id="fBar" style="background:#00ff88"></div></div></div>
+        <div class="mi"><div class="ml">Audio RMS</div><div class="mv" id="mRms">--</div><div class="mb"><div class="mf" id="rBar"></div></div></div>
+        <div class="mi"><div class="ml">Confidence</div><div class="mv" id="mConf">--</div><div class="mb"><div class="mf" id="cBar"></div></div></div>
+        <div class="mi"><div class="ml">Mode</div><div class="mv" id="mMode" style="font-size:12px">FUSION</div></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="ph">
+        <span class="pt">Transcription</span>
+        <div style="display:flex;gap:7px;align-items:center">
+          <button onclick="clrT()" style="background:none;border:none;color:#5a7a9a;cursor:pointer;font-size:10px">CLEAR</button>
+          <span class="badge br" id="tbadge">Waiting</span>
+        </div>
+      </div>
+      <div class="tbox">
+        <div class="ttxt empty" id="ttxt">Awaiting speech...<span class="cur"></span></div>
+      </div>
+      <div class="mrow">
+        <button class="mchip active" id="chip-fusion" onclick="setMode('fusion')">&#9889; Fusion</button>
+        <button class="mchip" id="chip-audio" onclick="setMode('audio')">&#127897; Audio</button>
+        <button class="mchip" id="chip-video" onclick="setMode('video')">&#128065; Video</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Lip Analysis</span><span class="badge br" id="lbadge">Idle</span></div>
+      <div class="lcard">
+        <div class="ldisp">
+          <div class="licon" id="licon">&#128528;</div>
+          <div><div class="lname" id="lname">Silent</div><div class="lsub" id="lsub">No lip movement</div></div>
+        </div>
+        <div style="font-size:9px;color:#5a7a9a;display:flex;justify-content:space-between;letter-spacing:1px;text-transform:uppercase">Motion Score<span id="mVal">0.0</span></div>
+        <div class="mmtrk"><div class="mmfil" id="mFil"></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">History</span><button onclick="clrH()" style="background:none;border:none;color:#5a7a9a;cursor:pointer;font-size:10px">CLEAR</button></div>
+      <div class="hlog" id="hlog"><div style="font-size:11px;color:#5a7a9a;text-align:center;padding:16px">No transcriptions yet</div></div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="toasts" id="toasts"></div>
+<script>
+var stream = null;
+var ws = null;
+var wsi = null;
+var running = false;
+var cvs = null;
+var fc = 0, lft = Date.now();
+var hist = [], lastT = '';
+var mode = 'fusion';
+var recog = null;
+var videoRec = null;
+var videoChunks = [];
+var videoInterval = null;
+
+function API() {
+  return document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
+}
+
+function ping() {
+  fetch(API() + '/health', {signal: AbortSignal.timeout(4000)})
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      document.getElementById('sdot').className = 'dot on';
+      document.getElementById('stxt').textContent = 'Online';
+      toast('Connected!', 'ok');
+    })
+    .catch(function() {
+      document.getElementById('sdot').className = 'dot er';
+      document.getElementById('stxt').textContent = 'Offline';
+      toast('Backend offline', 'er');
+    });
+}
+
+function setMode(m) {
+  mode = m;
+  ['fusion','audio','video'].forEach(function(x) {
+    var b = document.getElementById('chip-' + x);
+    if (b) b.className = 'mchip' + (x === m ? ' active' : '');
+  });
+  document.getElementById('mMode').textContent = m.toUpperCase();
+  if (!running) { toast('Mode: ' + m.toUpperCase(), 'ok'); return; }
+  if (m === 'video') {
+    if (recog) { try { recog.stop(); } catch(e) {} recog = null; }
+    startVideoWhisper();
+    toast('Video mode: Whisper transcription', 'ok');
+  } else {
+    stopVideoWhisper();
+    startSpeechRecognition();
+    toast('Mode: ' + m.toUpperCase(), 'ok');
+  }
+}
+
+function startVideoWhisper() {
+  navigator.mediaDevices.getUserMedia({audio: true, video: false})
+  .then(function(as) {
+    videoChunks = [];
+    var mtype = MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : 'audio/webm';
+    videoRec = new MediaRecorder(as, {mimeType: mtype});
+    videoRec.ondataavailable = function(e) {
+      if (e.data && e.data.size > 0) videoChunks.push(e.data);
+    };
+    videoRec.start(4000);
+    videoInterval = setInterval(function() {
+      if (mode !== 'video') return;
+      if (videoChunks.length === 0) return;
+      if (!ws || ws.readyState !== 1) return;
+      var blob = new Blob(videoChunks, {type: mtype});
+      videoChunks = [videoChunks[0]];
+      var reader = new FileReader();
+      reader.onload = function() {
+        var ab64 = reader.result.split(',')[1];
+        var f = (cvs && cvs.width > 0) ? cvs.toDataURL('image/jpeg', 0.8).split(',')[1] : null;
+        if (f && ab64) {
+          ws.send(JSON.stringify({frame: f, mode: 'video', audio: ab64}));
+        }
+      };
+      reader.readAsDataURL(blob);
+    }, 4000);
+    toast('Mic started for Video mode!', 'ok');
+  })
+  .catch(function(e) { toast('Mic failed: ' + e.message, 'er'); });
+}
+
+function stopVideoWhisper() {
+  if (videoInterval) { clearInterval(videoInterval); videoInterval = null; }
+  if (videoRec && videoRec.state !== 'inactive') { try { videoRec.stop(); } catch(e) {} }
+  videoRec = null;
+  videoChunks = [];
+}
+
+function startSpeechRecognition() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Speech API not supported', 'er'); return; }
+  if (recog) { try { recog.stop(); } catch(e) {} }
+  recog = new SR();
+  recog.continuous = true;
+  recog.interimResults = true;
+  recog.lang = 'en-US';
+  recog.onresult = function(e) {
+    var interim = '', final = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    var txt = final || interim;
+    if (txt.trim()) {
+      updT(txt, e.results[e.results.length-1][0].confidence || 0.9);
+      document.getElementById('mRms').textContent = 'Live';
+      if (final.trim()) { lastT = final; addH(final); }
+    }
+  };
+  recog.onerror = function(e) {
+    if (e.error !== 'no-speech') console.warn('Speech error:', e.error);
+  };
+  recog.onend = function() {
+    if (running && mode !== 'video') {
+      try { recog.start(); } catch(e) {}
+    }
+  };
+  try { recog.start(); } catch(e) { console.warn('Recog start:', e); }
+}
+
+function startCam() {
+  navigator.mediaDevices.getUserMedia({video: true, audio: false})
+  .then(function(vs) {
+    stream = vs;
+    var v = document.getElementById('vid');
+    v.srcObject = vs; v.play();
+    cvs = document.createElement('canvas');
+    running = true;
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('cbadge').textContent = 'Live';
+    document.getElementById('cbadge').className = 'badge bl';
+    document.getElementById('overlay').classList.add('hide');
+    document.getElementById('scanline').classList.add('go');
+    frameLoop();
+    connectWS();
+    if (mode === 'video') {
+      startVideoWhisper();
+    } else {
+      startSpeechRecognition();
+    }
+    toast('Camera started!', 'ok');
+  })
+  .catch(function(e) { toast('Camera: ' + e.message, 'er'); });
+}
+
+function stopCam() {
+  running = false;
+  if (recog) { try { recog.stop(); } catch(e) {} recog = null; }
+  stopVideoWhisper();
+  if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+  if (ws) ws.close();
+  if (wsi) clearInterval(wsi);
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('cbadge').textContent = 'Stopped';
+  document.getElementById('cbadge').className = 'badge bw';
+  document.getElementById('overlay').classList.remove('hide');
+  document.getElementById('scanline').classList.remove('go');
+  document.getElementById('vid').srcObject = null;
+  document.getElementById('wsbar').style.display = 'none';
+}
+
+function frameLoop() {
+  var v = document.getElementById('vid');
+  function loop() {
+    if (!running) return;
+    if (v.videoWidth > 0) {
+      cvs.width = v.videoWidth; cvs.height = v.videoHeight;
+      cvs.getContext('2d').drawImage(v, 0, 0);
+    }
+    fc++;
+    var now = Date.now();
+    if (now - lft >= 1000) {
+      document.getElementById('mFps').textContent = fc;
+      document.getElementById('fBar').style.width = Math.min(fc/60*100,100) + '%';
+      document.getElementById('fpsD').textContent = fc + ' FPS';
+      fc = 0; lft = now;
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function connectWS() {
+  var url = API().replace('http', 'ws') + '/ws/realtime';
+  document.getElementById('wsbar').style.display = 'flex';
+  ws = new WebSocket(url);
+  ws.onopen = function() {
+    document.getElementById('wdot').className = 'dot on';
+    document.getElementById('wtxt').textContent = 'Connected';
+    wsi = setInterval(function() {
+      if (!ws || ws.readyState !== 1 || !running) return;
+      var f = (cvs && cvs.width > 0) ? cvs.toDataURL('image/jpeg', 0.8).split(',')[1] : null;
+      if (!f) return;
+      ws.send(JSON.stringify({frame: f, mode: mode, audio: null}));
+    }, 3000);
+  };
+  ws.onmessage = function(e) {
+    var d = JSON.parse(e.data);
+    if (d.text && d.text.trim() && mode === 'video') {
+      updT(d.text, d.confidence || 0.8);
+      addH(d.text);
+    }
+    if (d.lip_state && d.lip_state.state) updL(d.lip_state);
+    if (d.bbox) updBox(d.bbox);
+    if (d.rms != null && d.rms > 0) {
+      document.getElementById('mRms').textContent = parseFloat(d.rms).toFixed(4);
+      document.getElementById('rBar').style.width = Math.min(d.rms * 2000, 100) + '%';
+    }
+  };
+  ws.onclose = function() {
+    document.getElementById('wdot').className = 'dot er';
+    document.getElementById('wtxt').textContent = 'Reconnecting...';
+    if (wsi) { clearInterval(wsi); wsi = null; }
+    if (running) setTimeout(connectWS, 1000);
+  };
+  ws.onerror = function() {};
+}
+
+function updT(t, c) {
+  var el = document.getElementById('ttxt');
+  el.className = 'ttxt';
+  el.innerHTML = t + '<span class="cur"></span>';
+  document.getElementById('tbadge').textContent = 'Active';
+  document.getElementById('tbadge').className = 'badge bl';
+  var p = Math.round((c || 0) * 100);
+  document.getElementById('mConf').textContent = p + '%';
+  document.getElementById('cBar').style.width = p + '%';
+}
+
+function updL(s) {
+  var st = s.state || 'silent';
+  var icons = {silent: '&#128528;', speaking: '&#128483;&#65039;', fast_motion: '&#9889;'};
+  var colors = {silent: '#5a7a9a', speaking: '#00ff88', fast_motion: '#ff6b35'};
+  document.getElementById('licon').innerHTML = icons[st] || '&#128528;';
+  document.getElementById('lname').textContent = st.replace('_',' ').toUpperCase();
+  document.getElementById('lname').style.color = colors[st] || '#e8f4fd';
+  document.getElementById('lsub').textContent = st === 'speaking' ? 'Active - speaking' : 'No lip movement';
+  var m = s.motion_score || 0;
+  document.getElementById('mVal').textContent = m.toFixed(1);
+  document.getElementById('mFil').style.width = Math.min(m * 8, 100) + '%';
+  document.getElementById('lbadge').textContent = st.replace('_', ' ');
+  document.getElementById('lbadge').className = 'badge ' + (st === 'speaking' ? 'bl' : 'br');
+}
+
+function updBox(b) {
+  var lb = document.getElementById('lipbox');
+  var cam = document.getElementById('camwrap');
+  var v = document.getElementById('vid');
+  if (!v.videoWidth) return;
+  var sx = cam.offsetWidth / v.videoWidth, sy = cam.offsetHeight / v.videoHeight;
+  lb.style.left = (b[0]*sx) + 'px'; lb.style.top = (b[1]*sy) + 'px';
+  lb.style.width = ((b[2]-b[0])*sx) + 'px'; lb.style.height = ((b[3]-b[1])*sy) + 'px';
+  lb.classList.add('show');
+}
+
+function addH(t) {
+  var now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  hist.unshift({t: t, time: now});
+  if (hist.length > 30) hist.pop();
+  document.getElementById('hlog').innerHTML = hist.map(function(h) {
+    return '<div class="hentry"><span class="htime">' + h.time + '</span>' + h.t + '</div>';
+  }).join('');
+}
+
+function clrH() {
+  hist = [];
+  document.getElementById('hlog').innerHTML = '<div style="font-size:11px;color:#5a7a9a;text-align:center;padding:16px">No transcriptions yet</div>';
+}
+
+function clrT() {
+  lastT = '';
+  document.getElementById('ttxt').className = 'ttxt empty';
+  document.getElementById('ttxt').innerHTML = 'Awaiting speech...<span class="cur"></span>';
+  document.getElementById('tbadge').textContent = 'Waiting';
+  document.getElementById('tbadge').className = 'badge br';
+}
+
+function toast(msg, type) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = '<span>' + (type === 'ok' ? '&#10003;' : '&#10007;') + '</span><span>' + msg + '</span>';
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function() { el.remove(); }, 3000);
+}
+
+window.onload = function() { setTimeout(ping, 600); };
+window.onbeforeunload = stopCam;
+</script>
+</body>
+</html>

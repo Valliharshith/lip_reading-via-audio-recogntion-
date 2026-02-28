@@ -1,0 +1,10 @@
+opencv-python==4.8.1.78
+mediapipe==0.10.7
+librosa==0.10.1
+torch==2.1.0
+torchaudio==2.1.0
+numpy==1.24.4
+sounddevice==0.4.6
+scipy==1.11.4
+transformers==4.35.2
+Pillow==10.1.0
